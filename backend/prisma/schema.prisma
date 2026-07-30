@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Kategori {
+  id     Int      @id @default(autoincrement())
+  nama   String   @unique
+  barang Barang[]
+}
+
+model LokasiGudang {
+  id          Int           @id @default(autoincrement())
+  nama        String        @unique
+  barang      Barang[]
+  riwayatScan RiwayatScan[]
+}
+
+model Barang {
+  id        Int     @id @default(autoincrement())
+  sku       String  @unique
+  nama      String
+  deskripsi String?
+  jumlah    Int     @default(0)
+
+  kategoriId Int
+  kategori   Kategori @relation(fields: [kategoriId], references: [id])
+
+  lokasiGudangId Int?
+  lokasiGudang   LokasiGudang? @relation(fields: [lokasiGudangId], references: [id])
+
+  riwayatScan RiwayatScan[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RiwayatPencarian {
+  id         Int      @id @default(autoincrement())
+  kataKunci  String
+  dibuatPada DateTime @default(now())
+}
+
+model RiwayatScan {
+  id Int @id @default(autoincrement())
+
+  barangId Int?
+  barang   Barang? @relation(fields: [barangId], references: [id])
+
+  lokasiGudangId Int?
+  lokasiGudang   LokasiGudang? @relation(fields: [lokasiGudangId], references: [id])
+
+  jenis   String
+  jumlah  Int
+  catatan String?
+
+  dibuatPada DateTime @default(now())
+}
