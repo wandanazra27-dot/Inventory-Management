@@ -1,26 +1,53 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLokasiGudangDto } from './dto/create-lokasi-gudang.dto';
 import { UpdateLokasiGudangDto } from './dto/update-lokasi-gudang.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class LokasiGudangService {
-  create(createLokasiGudangDto: CreateLokasiGudangDto) {
-    return 'This action adds a new lokasiGudang';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(createLokasiGudangDto: CreateLokasiGudangDto) {
+    return this.prisma.lokasiGudang.create({
+      data: createLokasiGudangDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all lokasiGudang`;
+  async findAll() {
+    return this.prisma.lokasiGudang.findMany({
+      include: {
+        _count: {
+          select: { barang: true },
+        },
+      },
+      orderBy: {
+        zona: 'asc',
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} lokasiGudang`;
+  async findOne(id: number) {
+    const lokasi = await this.prisma.lokasiGudang.findUnique({
+      where: { id },
+    });
+    if (!lokasi) {
+      throw new NotFoundException(`Lokasi Gudang with ID ${id} not found`);
+    }
+    return lokasi;
   }
 
-  update(id: number, updateLokasiGudangDto: UpdateLokasiGudangDto) {
-    return `This action updates a #${id} lokasiGudang`;
+  async update(id: number, updateLokasiGudangDto: UpdateLokasiGudangDto) {
+    await this.findOne(id); // Check existence
+    return this.prisma.lokasiGudang.update({
+      where: { id },
+      data: updateLokasiGudangDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} lokasiGudang`;
+  async remove(id: number) {
+    await this.findOne(id); // Check existence
+    return this.prisma.lokasiGudang.delete({
+      where: { id },
+    });
   }
 }

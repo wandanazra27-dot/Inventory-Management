@@ -16,6 +16,8 @@ model Kategori {
 model LokasiGudang {
   id          Int           @id @default(autoincrement())
   nama        String        @unique
+  zona        String        @default("Zone A")
+  kapasitas   Int           @default(100)
   barang      Barang[]
   riwayatScan RiwayatScan[]
 }
@@ -24,8 +26,9 @@ model Barang {
   id        Int     @id @default(autoincrement())
   sku       String  @unique
   nama      String
-  deskripsi String?
+  deskripsi String? @db.Text
   jumlah    Int     @default(0)
+  urlGambar String?
 
   kategoriId Int
   kategori   Kategori @relation(fields: [kategoriId], references: [id])

@@ -1,26 +1,46 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateKategoriDto } from './dto/create-kategori.dto';
 import { UpdateKategoriDto } from './dto/update-kategori.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class KategoriService {
-  create(createKategoriDto: CreateKategoriDto) {
-    return 'This action adds a new kategori';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(createKategoriDto: CreateKategoriDto) {
+    return this.prisma.kategori.create({
+      data: createKategoriDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all kategori`;
+  async findAll() {
+    return this.prisma.kategori.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} kategori`;
+  async findOne(id: number) {
+    const kategori = await this.prisma.kategori.findUnique({
+      where: { id },
+    });
+    if (!kategori) {
+      throw new NotFoundException(`Kategori with ID ${id} not found`);
+    }
+    return kategori;
   }
 
-  update(id: number, updateKategoriDto: UpdateKategoriDto) {
-    return `This action updates a #${id} kategori`;
+  async update(id: number, updateKategoriDto: UpdateKategoriDto) {
+    // Check if exists first
+    await this.findOne(id);
+    return this.prisma.kategori.update({
+      where: { id },
+      data: updateKategoriDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} kategori`;
+  async remove(id: number) {
+    // Check if exists first
+    await this.findOne(id);
+    return this.prisma.kategori.delete({
+      where: { id },
+    });
   }
 }
