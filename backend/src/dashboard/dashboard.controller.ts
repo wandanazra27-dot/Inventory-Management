@@ -9,4 +9,9 @@ export class DashboardController {
   getSummary() {
     return this.dashboardService.getSummary();
   }
+
+  @Get('metrics')
+  getMetrics() {
+    return this.dashboardService.getMetrics();
+  }
 }

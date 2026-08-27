@@ -23,13 +23,13 @@ export class DashboardService {
       riwayatTeks,
     ] = await Promise.all([
       this.prisma.barang.count(),
-      this.prisma.lokasiGudang.count(),
+      this.prisma.lokasigudang.count(),
       this.prisma.barang.aggregate({
         _sum: {
           jumlah: true,
         },
       }),
-      this.prisma.riwayatScan.count({
+      this.prisma.riwayatscan.count({
         where: {
           dibuatPada: {
             gte: today,
@@ -37,7 +37,7 @@ export class DashboardService {
           },
         },
       }),
-      this.prisma.riwayatPencarian.count({
+      this.prisma.riwayatpencarian.count({
         where: {
           dibuatPada: {
             gte: today,
@@ -45,13 +45,19 @@ export class DashboardService {
           },
         },
       }),
-      this.prisma.riwayatScan.findMany({
+      this.prisma.riwayatscan.findMany({
         take: 5,
         orderBy: { dibuatPada: 'desc' },
       }),
-      this.prisma.riwayatPencarian.findMany({
+      this.prisma.riwayatpencarian.findMany({
         take: 5,
         orderBy: { dibuatPada: 'desc' },
+        where: {
+          dibuatPada: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
       }),
     ]);
 
@@ -63,6 +69,60 @@ export class DashboardService {
       searchHariIni,
       riwayatVisual,
       riwayatTeks,
+    };
+  }
+
+  async getMetrics() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [
+      totalBarang,
+      totalLokasi,
+      totalScanAI,
+      totalPencarianHariIni,
+      topPencarianGroups,
+    ] = await Promise.all([
+      this.prisma.barang.count(),
+      this.prisma.lokasigudang.count(),
+      this.prisma.riwayatscan.count({
+        where: {
+          dibuatPada: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+      }),
+      this.prisma.riwayatpencarian.count({
+        where: {
+          dibuatPada: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+      }),
+      this.prisma.riwayatpencarian.groupBy({
+        by: ['kataKunci'],
+        _count: {
+          id: true,
+        },
+        orderBy: {
+          _count: {
+            id: 'desc',
+          },
+        },
+        take: 5,
+      }),
+    ]);
+
+    return {
+      totalBarang,
+      totalLokasi,
+      totalScanAI,
+      totalPencarianHariIni,
+      topPencarian: topPencarianGroups,
     };
   }
 }

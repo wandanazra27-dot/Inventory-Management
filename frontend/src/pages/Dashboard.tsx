@@ -47,29 +47,29 @@ export default function Dashboard() {
           {/* KPI Cards Grid */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat, i) => (
-              <div key={i} className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col gap-2">
+              <div key={i} className="rounded-xl border border-slate-900 bg-white shadow-sm p-6 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <div className="p-2 bg-muted rounded-md">
+                  <p className="text-sm font-medium text-slate-500">{stat.label}</p>
+                  <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
                     {stat.icon}
                   </div>
                 </div>
-                <h2 className="text-3xl font-bold">{stat.value}</h2>
+                <h2 className="text-3xl font-bold text-slate-800">{stat.value}</h2>
               </div>
             ))}
           </div>
 
           {/* Bottom Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="col-span-2 rounded-xl border bg-card text-card-foreground shadow-sm p-6 min-h-[300px] flex flex-col">
+            <div className="col-span-2 rounded-xl border border-slate-900 bg-white shadow-sm p-6 min-h-75 flex flex-col">
               <h3 className="font-semibold mb-4">Aktivitas Inventory Mingguan</h3>
-              <div className="flex-1 border-2 border-dashed rounded-lg flex items-center justify-center text-muted-foreground bg-muted/20">
+              <div className="flex-1 border border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-400 bg-slate-50">
                 [ Area Grafik Bar Chart ]
               </div>
             </div>
             
-            <div className="col-span-1 rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-              <h3 className="font-semibold mb-4">Pencarian Teratas</h3>
+            <div className="col-span-1 rounded-xl border border-slate-900 bg-white shadow-sm p-6">
+              <h3 className="font-semibold mb-4 text-slate-800">Pencarian Teratas</h3>
               {metrics.topPencarian && metrics.topPencarian.length > 0 ? (
                 <ul className="space-y-4">
                   {metrics.topPencarian.map((item: any, i: number) => (

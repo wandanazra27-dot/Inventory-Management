@@ -10,7 +10,7 @@ async function main() {
   // Clear existing data before seeding (optional but good for a clean state)
   await prisma.barang.deleteMany();
   await prisma.kategori.deleteMany();
-  await prisma.lokasiGudang.deleteMany();
+  await prisma.lokasigudang.deleteMany();
   console.log('🧹 Cleared existing database records.');
 
   // 1. Read Excel file
@@ -19,13 +19,13 @@ async function main() {
   const workbook = xlsx.readFile(excelFilePath);
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
-  
+
   // Read all rows (header = 1 means array of arrays)
   const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
-  
+
   // Data starts at row index 5
   let dataRows = rows.slice(5);
-  
+
   console.log(`Found ${dataRows.length} items to import.`);
 
   let successCount = 0;
@@ -51,17 +51,43 @@ async function main() {
       namaKategori = kategoriFull.split('(')[0].trim();
     }
 
-    // Generate Lokasi name based on index
-    // Example logic: 10 keranjang per rak, 10 barang per keranjang
-    const rak = Math.floor(i / 100) + 1;
-    const keranjang = Math.floor((i % 100) / 10) + 1;
-    const barangIdx = (i % 10) + 1;
-    const namaLokasi = `RK${rak}-${keranjang}.${barangIdx}`;
-
-    // Determine Zone (e.g. Zone A for rak 1, Zone B for rak 2...)
-    const zones = ['Zone A', 'Zone B', 'Zone C', 'Zone D'];
-    const zona = zones[(rak - 1) % zones.length];
-    const kapasitas = 100;
+    // Sesuai kondisi gudang asli: Ada 4 Rak, masing-masing 4 Baris
+    // Setiap baris ada 1 keranjang, dan setiap keranjang menampung 4 barang
+    // Total kapasitas gudang = 4 * 4 * 4 = 64 barang
+    
+    let lokasiId: number | null = null;
+    
+    if (successCount < 64) {
+      const rakNum = Math.floor(successCount / 16) + 1; // 1 sampai 4
+      const localI = successCount % 16; // 0 sampai 15
+      
+      const barisNum = Math.floor(localI / 4) + 1; // 1 sampai 4
+      const keranjangNum = barisNum; // 1 keranjang per baris
+      const barangIdx = (localI % 4) + 1; // 1 sampai 4
+      
+      const namaLokasi = `RK${rakNum}-${keranjangNum}.${barangIdx}`;
+      const zonaName = `Rak ${rakNum}`; 
+      
+      // Upsert Lokasi
+      const lokasi = await prisma.lokasigudang.upsert({
+        where: { nama: namaLokasi },
+        update: {
+          rak: `Rak ${rakNum}`,
+          baris: barisNum,
+          keranjang: keranjangNum.toString(),
+          zona: zonaName
+        },
+        create: { 
+          nama: namaLokasi,
+          rak: `Rak ${rakNum}`,
+          baris: barisNum,
+          keranjang: keranjangNum.toString(),
+          zona: zonaName,
+          kapasitas: 1
+        },
+      });
+      lokasiId = lokasi.id;
+    }
 
     try {
       // Upsert Category
@@ -71,20 +97,6 @@ async function main() {
         create: { nama: namaKategori },
       });
 
-      // Upsert Lokasi
-      const lokasi = await prisma.lokasiGudang.upsert({
-        where: { nama: namaLokasi },
-        update: {
-          zona: zona,
-          kapasitas: kapasitas,
-        },
-        create: { 
-          nama: namaLokasi,
-          zona: zona,
-          kapasitas: kapasitas,
-        },
-      });
-
       // Upsert Barang
       await prisma.barang.upsert({
         where: { sku: sku },
@@ -92,29 +104,30 @@ async function main() {
           nama,
           deskripsi,
           kategoriId: kategori.id,
-          lokasiGudangId: lokasi.id,
+          lokasiGudangId: lokasiId,
         },
         create: {
           sku,
           nama,
           deskripsi,
           kategoriId: kategori.id,
-          lokasiGudangId: lokasi.id,
-          jumlah: 0, // Initial stock is 0
+          lokasiGudangId: lokasiId,
+          jumlah: 10, // Default stock
+          updatedAt: new Date(),
         },
       });
 
       successCount++;
     } catch (error) {
-      console.error(`❌ Error importing SKU ${sku}:`, error.message);
+      console.error(`Error importing SKU ${sku}:`, error.message);
       errorCount++;
     }
   }
 
-  console.log(`\n🎉 Seeding finished!`);
+  console.log(`\n Seeding finished!`);
   console.log(`✅ Successfully imported: ${successCount} items`);
   if (errorCount > 0) {
-    console.log(`❌ Failed to import: ${errorCount} items`);
+    console.log(`Failed to import: ${errorCount} items`);
   }
 }
 

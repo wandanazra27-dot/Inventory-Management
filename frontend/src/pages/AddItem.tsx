@@ -7,35 +7,44 @@ export default function AddItem() {
   const navigate = useNavigate();
   const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     nama: '',
     sku: '',
     lokasiGudangId: '',
+    kategoriId: '',
     jumlah: 0,
     stokMinimum: 0,
     deskripsi: ''
   });
 
   useEffect(() => {
+    // Fetch Lokasi
     axios.get('http://localhost:3000/lokasi-gudang')
       .then(res => setLocations(res.data))
       .catch(err => console.error('Failed to load locations', err));
+      
+    // Fetch Kategori
+    axios.get('http://localhost:3000/barang/kategori/all')
+      .then(res => setCategories(res.data))
+      .catch(() => {
+        console.error('Failed to load categories');
+      });
   }, []);
 
   const handleSave = () => {
-    if(!formData.nama || !formData.sku) {
-      alert('Nama item dan SKU wajib diisi!');
+    if(!formData.nama || !formData.sku || !formData.kategoriId) {
+      alert('Nama item, SKU, dan Kategori wajib diisi!');
       return;
     }
     setLoading(true);
     
-    // Default kategoriId to 1 for now
     const payload = {
       nama: formData.nama,
       sku: formData.sku,
       deskripsi: formData.deskripsi,
       jumlah: Number(formData.jumlah),
-      kategoriId: 1, 
+      kategoriId: Number(formData.kategoriId), 
       ...(formData.lokasiGudangId && { lokasiGudangId: Number(formData.lokasiGudangId) })
     };
 
@@ -44,7 +53,7 @@ export default function AddItem() {
         setLoading(false);
         navigate('/inventory');
       })
-      .catch(err => {
+      .catch(() => {
         setLoading(false);
         alert('Gagal menyimpan item. Pastikan SKU unik.');
       });
@@ -80,10 +89,28 @@ export default function AddItem() {
                 type="text" 
                 value={formData.sku}
                 onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                placeholder="SKU-001" 
+                placeholder="Misal: SKU-100" 
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Kategori <span className="text-red-500">*</span></label>
+              <select 
+                value={formData.kategoriId}
+                onChange={(e) => setFormData({...formData, kategoriId: e.target.value})}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              >
+                <option value="">-- Pilih Kategori --</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.nama}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Lokasi</label>
               <select 

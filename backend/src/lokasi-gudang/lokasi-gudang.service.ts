@@ -8,14 +8,20 @@ export class LokasiGudangService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createLokasiGudangDto: CreateLokasiGudangDto) {
-    return this.prisma.lokasiGudang.create({
+    return this.prisma.lokasigudang.create({
       data: createLokasiGudangDto,
     });
   }
 
   async findAll() {
-    return this.prisma.lokasiGudang.findMany({
+    return this.prisma.lokasigudang.findMany({
       include: {
+        barang: {
+          select: {
+            id: true,
+            nama: true,
+          }
+        },
         _count: {
           select: { barang: true },
         },
@@ -27,7 +33,7 @@ export class LokasiGudangService {
   }
 
   async findOne(id: number) {
-    const lokasi = await this.prisma.lokasiGudang.findUnique({
+    const lokasi = await this.prisma.lokasigudang.findUnique({
       where: { id },
     });
     if (!lokasi) {
@@ -38,7 +44,7 @@ export class LokasiGudangService {
 
   async update(id: number, updateLokasiGudangDto: UpdateLokasiGudangDto) {
     await this.findOne(id); // Check existence
-    return this.prisma.lokasiGudang.update({
+    return this.prisma.lokasigudang.update({
       where: { id },
       data: updateLokasiGudangDto,
     });
@@ -46,7 +52,7 @@ export class LokasiGudangService {
 
   async remove(id: number) {
     await this.findOne(id); // Check existence
-    return this.prisma.lokasiGudang.delete({
+    return this.prisma.lokasigudang.delete({
       where: { id },
     });
   }

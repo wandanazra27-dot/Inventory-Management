@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 
 export default function Inventory() {
   const [barangList, setBarangList] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
   const fetchBarang = () => {
@@ -23,6 +24,13 @@ export default function Inventory() {
   useEffect(() => {
     fetchBarang();
   }, []);
+
+  const filteredBarang = barangList.filter(item => 
+    item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.deskripsi && item.deskripsi.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (item.kategori?.nama && item.kategori.nama.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="space-y-6 p-2">
@@ -47,6 +55,8 @@ export default function Inventory() {
         <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input 
           type="text" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Cari nama, SKU, deskripsi..." 
           className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
         />
@@ -73,14 +83,14 @@ export default function Inventory() {
                     Memuat data...
                   </td>
                 </tr>
-              ) : barangList.length === 0 ? (
+              ) : filteredBarang.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
-                    Tidak ada data barang.
+                    {searchQuery ? `Tidak ada barang yang cocok dengan pencarian "${searchQuery}".` : 'Tidak ada data barang.'}
                   </td>
                 </tr>
               ) : (
-                barangList.map((item) => (
+                filteredBarang.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">

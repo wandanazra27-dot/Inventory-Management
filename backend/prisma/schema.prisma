@@ -3,63 +3,65 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-model Kategori {
+model barang {
+  id             Int           @id @default(autoincrement())
+  sku            String        @unique
+  nama           String
+  deskripsi      String?
+  jumlah         Int           @default(0)
+  kategoriId     Int
+  lokasiGudangId Int?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  urlGambar      String?
+  kategori       kategori      @relation(fields: [kategoriId], references: [id])
+  lokasigudang   lokasigudang? @relation(fields: [lokasiGudangId], references: [id])
+  riwayatscan    riwayatscan[]
+
+  @@index([kategoriId])
+  @@index([lokasiGudangId])
+}
+
+model kategori {
   id     Int      @id @default(autoincrement())
   nama   String   @unique
-  barang Barang[]
+  barang barang[]
 }
 
-model LokasiGudang {
+model lokasigudang {
   id          Int           @id @default(autoincrement())
   nama        String        @unique
-  zona        String        @default("Zone A")
   kapasitas   Int           @default(100)
-  barang      Barang[]
-  riwayatScan RiwayatScan[]
+  zona        String        @default("Rak 1")
+  rak         String?
+  baris       Int?
+  keranjang   String?
+  barang      barang[]
+  riwayatscan riwayatscan[]
 }
 
-model Barang {
-  id        Int     @id @default(autoincrement())
-  sku       String  @unique
-  nama      String
-  deskripsi String? @db.Text
-  jumlah    Int     @default(0)
-  urlGambar String?
-
-  kategoriId Int
-  kategori   Kategori @relation(fields: [kategoriId], references: [id])
-
-  lokasiGudangId Int?
-  lokasiGudang   LokasiGudang? @relation(fields: [lokasiGudangId], references: [id])
-
-  riwayatScan RiwayatScan[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model RiwayatPencarian {
+model riwayatpencarian {
   id         Int      @id @default(autoincrement())
   kataKunci  String
   dibuatPada DateTime @default(now())
 }
 
-model RiwayatScan {
-  id Int @id @default(autoincrement())
-
-  barangId Int?
-  barang   Barang? @relation(fields: [barangId], references: [id])
-
+model riwayatscan {
+  id             Int           @id @default(autoincrement())
+  barangId       Int?
   lokasiGudangId Int?
-  lokasiGudang   LokasiGudang? @relation(fields: [lokasiGudangId], references: [id])
+  jenis          String
+  jumlah         Int
+  catatan        String?
+  dibuatPada     DateTime      @default(now())
+  barang         barang?       @relation(fields: [barangId], references: [id])
+  lokasigudang   lokasigudang? @relation(fields: [lokasiGudangId], references: [id])
 
-  jenis   String
-  jumlah  Int
-  catatan String?
-
-  dibuatPada DateTime @default(now())
+  @@index([barangId])
+  @@index([lokasiGudangId])
 }

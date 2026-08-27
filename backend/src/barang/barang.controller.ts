@@ -12,6 +12,11 @@ export class BarangController {
     return this.barangService.create(createBarangDto);
   }
 
+  @Get('kategori/all')
+  findAllKategori() {
+    return this.barangService.findAllKategori();
+  }
+
   @Get()
   findAll() {
     return this.barangService.findAll();
@@ -20,6 +25,11 @@ export class BarangController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.barangService.findOne(+id);
+  }
+
+  @Post(':id/adjust')
+  adjustStock(@Param('id') id: string, @Body() body: { jumlah: number, jenis: string, catatan: string }) {
+    return this.barangService.adjustStock(+id, body.jumlah, body.jenis, body.catatan);
   }
 
   @Patch(':id')

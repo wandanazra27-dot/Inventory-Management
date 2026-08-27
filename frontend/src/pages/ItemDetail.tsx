@@ -12,6 +12,17 @@ export default function ItemDetail() {
   const [adjustAmount, setAdjustAmount] = useState(1);
   const [adjustNotes, setAdjustNotes] = useState('');
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [locations, setLocations] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [editForm, setEditForm] = useState({
+    nama: '',
+    sku: '',
+    kategoriId: '',
+    lokasiGudangId: '',
+    deskripsi: ''
+  });
+
   const [itemData, setItemData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,6 +43,43 @@ export default function ItemDetail() {
     if (id) fetchItem();
   }, [id]);
 
+  const openEditModal = () => {
+    // Populate form
+    setEditForm({
+      nama: itemData?.nama || '',
+      sku: itemData?.sku || '',
+      kategoriId: itemData?.kategoriId || '',
+      lokasiGudangId: itemData?.lokasiGudangId || '',
+      deskripsi: itemData?.deskripsi || ''
+    });
+    
+    // Fetch options if not fetched yet
+    if (locations.length === 0) {
+      axios.get('http://localhost:3000/lokasi-gudang').then(res => setLocations(res.data)).catch(console.error);
+    }
+    if (categories.length === 0) {
+      axios.get('http://localhost:3000/kategori').then(res => setCategories(res.data)).catch(console.error);
+    }
+    
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      ...editForm,
+      kategoriId: editForm.kategoriId ? parseInt(editForm.kategoriId as string) : null,
+      lokasiGudangId: editForm.lokasiGudangId ? parseInt(editForm.lokasiGudangId as string) : null,
+    };
+
+    axios.patch(`http://localhost:3000/barang/${id}`, payload)
+      .then(() => {
+        setIsEditModalOpen(false);
+        fetchItem();
+      })
+      .catch(err => alert('Gagal menyimpan perubahan.'));
+  };
+
   const handleDelete = () => {
     if (confirm('Apakah Anda yakin ingin menghapus item ini?')) {
       axios.delete(`http://localhost:3000/barang/${id}`)
@@ -42,21 +90,18 @@ export default function ItemDetail() {
 
   const handleAdjustStock = () => {
     if (adjustAmount <= 0) return;
-    const newStock = adjustType === 'in' ? itemData.jumlah + adjustAmount : itemData.jumlah - adjustAmount;
-    
-    if (newStock < 0) {
-      alert('Stok tidak boleh negatif!');
-      return;
-    }
-
-    axios.patch(`http://localhost:3000/barang/${id}`, { jumlah: newStock })
+    axios.post(`http://localhost:3000/barang/${id}/adjust`, { 
+      jumlah: adjustAmount,
+      jenis: adjustType === 'in' ? 'MASUK' : 'KELUAR',
+      catatan: adjustNotes
+    })
       .then(() => {
         setIsAdjustModalOpen(false);
         setAdjustAmount(1);
         setAdjustNotes('');
         fetchItem(); // refresh data
       })
-      .catch(() => alert('Gagal menyesuaikan stok.'));
+      .catch((err) => alert(err.response?.data?.message || 'Gagal menyesuaikan stok.'));
   };
 
   if (loading) {
@@ -67,7 +112,7 @@ export default function ItemDetail() {
     return <div className="p-8 text-center text-red-500">Barang tidak ditemukan.</div>;
   }
 
-  const { nama, sku, jumlah, lokasiGudang, kategori, deskripsi } = itemData;
+  const { nama, sku, jumlah, lokasiGudang, kategori } = itemData;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pt-2">
@@ -83,7 +128,10 @@ export default function ItemDetail() {
           </div>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm">
+          <button 
+            onClick={openEditModal}
+            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm"
+          >
             <Edit3 className="w-4 h-4" /> Edit
           </button>
           <button 
@@ -173,15 +221,45 @@ export default function ItemDetail() {
                   </div>
                   <div>
                     <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Deskripsi Lengkap</h4>
-                    <p className="text-slate-600 text-sm leading-relaxed">
-                      {deskripsi || 'Tidak ada deskripsi.'}
-                    </p>
+                    {itemData.deskripsi ? (
+                      <div 
+                        className="text-slate-600 text-sm leading-relaxed html-desc"
+                        dangerouslySetInnerHTML={{ __html: itemData.deskripsi }}
+                      />
+                    ) : (
+                      <p className="text-slate-600 text-sm leading-relaxed">Tidak ada deskripsi.</p>
+                    )}
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-                  <BarChart2 className="w-12 h-12 mb-3 opacity-20" />
-                  <p className="text-sm">Belum ada riwayat pergerakan barang.</p>
+                <div className="space-y-4">
+                  {itemData?.riwayatScan && itemData.riwayatScan.length > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                      {itemData.riwayatScan.map((log: any, idx: number) => (
+                        <div key={idx} className="py-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${log.jenis === 'MASUK' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+                              {log.jenis === 'MASUK' ? <Plus className="w-5 h-5" /> : <Minus className="w-5 h-5" />}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-800">
+                                {log.jenis === 'MASUK' ? 'Stok Masuk' : 'Stok Keluar'} <span className={log.jenis === 'MASUK' ? 'text-emerald-600' : 'text-orange-600'}>{log.jenis === 'MASUK' ? '+' : '-'}{log.jumlah}</span>
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5">{log.catatan || 'Tanpa catatan'}</p>
+                            </div>
+                          </div>
+                          <div className="text-right text-xs text-slate-400 font-medium">
+                            {new Date(log.dibuatPada).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-40 text-slate-400">
+                      <BarChart2 className="w-12 h-12 mb-3 opacity-20" />
+                      <p className="text-sm">Belum ada riwayat pergerakan barang.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -226,12 +304,67 @@ export default function ItemDetail() {
                 </button>
                 <button 
                   onClick={handleAdjustStock}
-                  className={`flex-1 py-2.5 text-white rounded-lg text-sm font-bold shadow-sm transition-colors ${adjustType === 'in' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold text-white shadow-sm transition-colors ${adjustType === 'in' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}
                 >
                   Simpan Perubahan
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 bg-slate-50 border-b flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">Edit Barang</h2>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="p-6 overflow-y-auto space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nama Barang</label>
+                  <input required type="text" value={editForm.nama} onChange={e => setEditForm({...editForm, nama: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">SKU (Kode)</label>
+                  <input required type="text" value={editForm.sku} onChange={e => setEditForm({...editForm, sku: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kategori</label>
+                  <select value={editForm.kategoriId} onChange={e => setEditForm({...editForm, kategoriId: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                    <option value="">-- Pilih Kategori --</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.nama}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Lokasi Gudang (Rak)</label>
+                  <select value={editForm.lokasiGudangId} onChange={e => setEditForm({...editForm, lokasiGudangId: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                    <option value="">-- Kosongkan / Belum Ada --</option>
+                    {locations.map(l => (
+                      <option key={l.id} value={l.id}>{l.nama} ({l.zona})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Deskripsi</label>
+                <textarea rows={3} value={editForm.deskripsi} onChange={e => setEditForm({...editForm, deskripsi: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t mt-6">
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors">Batal</button>
+                <button type="submit" className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white shadow-sm transition-colors bg-emerald-500 hover:bg-emerald-600">Simpan Perubahan</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

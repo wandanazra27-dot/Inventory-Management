@@ -6,7 +6,6 @@ import SearchLocate from './pages/SearchLocate';
 import ManageWarehouse from './pages/ManageWarehouse';
 import AddItem from './pages/AddItem';
 import ItemDetail from './pages/ItemDetail';
-import ScanVisual from './pages/ScanVisual';
 import ReportsLogs from './pages/ReportsLogs';
 
 function App() {
@@ -21,7 +20,6 @@ function App() {
           <Route path="/inventory/:id" element={<ItemDetail />} />
           <Route path="/search-locate" element={<SearchLocate />} />
           <Route path="/manage-warehouse" element={<ManageWarehouse />} />
-          <Route path="/scan-visual" element={<ScanVisual />} />
           <Route path="/reports" element={<ReportsLogs />} />
         </Routes>
       </Layout>

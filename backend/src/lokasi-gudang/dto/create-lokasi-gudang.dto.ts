@@ -14,4 +14,17 @@ export class CreateLokasiGudangDto {
   @IsOptional()
   @Type(() => Number)
   kapasitas?: number;
+
+  @IsString()
+  @IsOptional()
+  rak?: string;
+
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  baris?: number;
+
+  @IsString()
+  @IsOptional()
+  keranjang?: string;
 }

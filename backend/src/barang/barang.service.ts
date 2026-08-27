@@ -12,16 +12,20 @@ export class BarangService {
       data: createBarangDto,
       include: {
         kategori: true,
-        lokasiGudang: true,
+        lokasigudang: true,
       },
     });
+  }
+
+  findAllKategori() {
+    return this.prisma.kategori.findMany();
   }
 
   async findAll() {
     return this.prisma.barang.findMany({
       include: {
         kategori: true,
-        lokasiGudang: true,
+        lokasigudang: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -34,13 +38,50 @@ export class BarangService {
       where: { id },
       include: {
         kategori: true,
-        lokasiGudang: true,
+        lokasigudang: true,
+        riwayatscan: {
+          orderBy: { dibuatPada: 'desc' }
+        },
       },
     });
     if (!barang) {
       throw new NotFoundException(`Barang with ID ${id} not found`);
     }
     return barang;
+  }
+
+  async adjustStock(id: number, amount: number, jenis: string, catatan: string) {
+    const barang = await this.findOne(id);
+    
+    let newStock = barang.jumlah;
+    if (jenis === 'MASUK') {
+      newStock += amount;
+    } else if (jenis === 'KELUAR') {
+      newStock -= amount;
+      if (newStock < 0) {
+        throw new Error('Stok tidak mencukupi');
+      }
+    }
+
+    // Gunakan transaksi agar kedua operasi (update stok & catat riwayat) berhasil bersamaan
+    return this.prisma.$transaction(async (prisma) => {
+      const updatedBarang = await prisma.barang.update({
+        where: { id },
+        data: { jumlah: newStock },
+      });
+
+      await prisma.riwayatscan.create({
+        data: {
+          barangId: id,
+          lokasiGudangId: barang.lokasiGudangId,
+          jenis: jenis,
+          jumlah: amount,
+          catatan: catatan || 'Penyesuaian stok manual',
+        }
+      });
+
+      return updatedBarang;
+    });
   }
 
   async update(id: number, updateBarangDto: UpdateBarangDto) {
@@ -50,7 +91,7 @@ export class BarangService {
       data: updateBarangDto,
       include: {
         kategori: true,
-        lokasiGudang: true,
+        lokasigudang: true,
       },
     });
   }
