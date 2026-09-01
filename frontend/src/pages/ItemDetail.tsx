@@ -15,6 +15,9 @@ export default function ItemDetail() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [locations, setLocations] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [foto, setFoto] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState({
     nama: '',
     sku: '',
@@ -52,6 +55,8 @@ export default function ItemDetail() {
       lokasiGudangId: itemData?.lokasiGudangId || '',
       deskripsi: itemData?.deskripsi || ''
     });
+    setFoto(null);
+    setFotoPreview(itemData?.urlGambar ? `http://localhost:3000${itemData.urlGambar}` : null);
     
     // Fetch options if not fetched yet
     if (locations.length === 0) {
@@ -64,20 +69,48 @@ export default function ItemDetail() {
     setIsEditModalOpen(true);
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      ...editForm,
-      kategoriId: editForm.kategoriId ? parseInt(editForm.kategoriId as string) : null,
-      lokasiGudangId: editForm.lokasiGudangId ? parseInt(editForm.lokasiGudangId as string) : null,
-    };
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setFoto(file);
+      setFotoPreview(URL.createObjectURL(file));
+    }
+  };
 
-    axios.patch(`http://localhost:3000/barang/${id}`, payload)
-      .then(() => {
-        setIsEditModalOpen(false);
-        fetchItem();
-      })
-      .catch(err => alert('Gagal menyimpan perubahan.'));
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    
+    try {
+      let finalUrlGambar = itemData?.urlGambar || null;
+
+      if (foto) {
+        const formDataFoto = new FormData();
+        formDataFoto.append('foto', foto);
+        const uploadRes = await axios.post('http://localhost:3000/barang/upload', formDataFoto, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        finalUrlGambar = uploadRes.data.url;
+      } else if (!fotoPreview) {
+        // If fotoPreview is null but foto is not uploaded, it means user removed the photo
+        finalUrlGambar = null;
+      }
+
+      const payload = {
+        ...editForm,
+        kategoriId: editForm.kategoriId ? parseInt(editForm.kategoriId as string) : null,
+        lokasiGudangId: editForm.lokasiGudangId ? parseInt(editForm.lokasiGudangId as string) : null,
+        urlGambar: finalUrlGambar
+      };
+
+      await axios.patch(`http://localhost:3000/barang/${id}`, payload);
+      setIsEditModalOpen(false);
+      setIsSaving(false);
+      fetchItem();
+    } catch (err) {
+      setIsSaving(false);
+      alert('Gagal menyimpan perubahan.');
+    }
   };
 
   const handleDelete = () => {
@@ -149,9 +182,15 @@ export default function ItemDetail() {
         <div className="lg:col-span-1 flex flex-col gap-6">
           {/* Stock Card */}
           <div className="bg-white rounded-xl border p-6 shadow-sm flex flex-col items-center justify-center text-center">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${jumlah > 10 ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
-              <Package className="w-10 h-10" />
-            </div>
+            {itemData.urlGambar ? (
+              <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-sm border border-slate-200 mb-4 bg-slate-50">
+                <img src={`http://localhost:3000${itemData.urlGambar}`} alt={nama} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${jumlah > 10 ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
+                <Package className="w-10 h-10" />
+              </div>
+            )}
             <p className="text-sm font-semibold text-slate-500 mb-1">Total Stok Tersedia</p>
             <h2 className="text-5xl font-bold text-slate-800 tracking-tight">{jumlah}</h2>
             <div className="mt-6 w-full flex gap-2">
@@ -356,13 +395,39 @@ export default function ItemDetail() {
               </div>
 
               <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Foto Barang</label>
+                <div className="flex items-center gap-4">
+                  {fotoPreview ? (
+                    <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200">
+                      <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                      <button 
+                        type="button"
+                        onClick={() => { setFoto(null); setFotoPreview(null); }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                      <span className="text-xl text-slate-400">+</span>
+                      <span className="text-[10px] text-slate-500 mt-1">Upload</span>
+                      <input type="file" accept="image/*" onChange={handleFotoChange} className="hidden" />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">Deskripsi</label>
                 <textarea rows={3} value={editForm.deskripsi} onChange={e => setEditForm({...editForm, deskripsi: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
 
               <div className="flex gap-3 pt-4 border-t mt-6">
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors">Batal</button>
-                <button type="submit" className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white shadow-sm transition-colors bg-emerald-500 hover:bg-emerald-600">Simpan Perubahan</button>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} disabled={isSaving} className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors disabled:opacity-50">Batal</button>
+                <button type="submit" disabled={isSaving} className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white shadow-sm transition-colors bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50">
+                  {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
               </div>
             </form>
           </div>

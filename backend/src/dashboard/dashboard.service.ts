@@ -48,6 +48,12 @@ export class DashboardService {
       this.prisma.riwayatscan.findMany({
         take: 5,
         orderBy: { dibuatPada: 'desc' },
+        where: {
+          dibuatPada: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
       }),
       this.prisma.riwayatpencarian.findMany({
         take: 5,
@@ -105,6 +111,12 @@ export class DashboardService {
       }),
       this.prisma.riwayatpencarian.groupBy({
         by: ['kataKunci'],
+        where: {
+          dibuatPada: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
         _count: {
           id: true,
         },

@@ -29,4 +29,8 @@ export class CreateBarangDto {
   @IsOptional()
   @Type(() => Number)
   lokasiGudangId?: number;
+
+  @IsString()
+  @IsOptional()
+  urlGambar?: string;
 }

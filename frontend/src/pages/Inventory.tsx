@@ -94,9 +94,15 @@ export default function Inventory() {
                   <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-md bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-                           <span className="text-emerald-500 text-[10px]">📦</span>
-                        </div>
+                        {item.urlGambar ? (
+                          <div className="w-10 h-10 rounded-md overflow-hidden shrink-0 border border-slate-200">
+                            <img src={`http://localhost:3000${item.urlGambar}`} alt={item.nama} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-md bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                             <span className="text-emerald-500 text-lg">📦</span>
+                          </div>
+                        )}
                         <span className="font-medium text-slate-700">{item.nama}</span>
                       </div>
                     </td>
@@ -107,11 +113,15 @@ export default function Inventory() {
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-slate-700 font-medium text-xs">
-                          {item.lokasiGudang ? item.lokasiGudang.nama : '-'}
+                          {item.lokasiGudang ? item.lokasiGudang.nama : 'Belum Dialokasikan'}
                         </span>
-                        <span className="text-slate-400 text-[10px]">
-                          {item.lokasiGudang ? item.lokasiGudang.zona : '-'}
-                        </span>
+                        {item.lokasiGudang && (
+                          <span className="text-slate-400 text-[10px] mt-0.5">
+                            {item.lokasiGudang.zona}
+                            {item.lokasiGudang.rak ? ` • Rak ${item.lokasiGudang.rak}` : ''}
+                            {item.lokasiGudang.baris ? ` • Baris ${item.lokasiGudang.baris}` : ''}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center font-semibold text-slate-700">

@@ -8,6 +8,8 @@ export default function AddItem() {
   const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const [foto, setFoto] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nama: '',
     sku: '',
@@ -32,31 +34,50 @@ export default function AddItem() {
       });
   }, []);
 
-  const handleSave = () => {
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setFoto(file);
+      setFotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSave = async () => {
     if(!formData.nama || !formData.sku || !formData.kategoriId) {
       alert('Nama item, SKU, dan Kategori wajib diisi!');
       return;
     }
     setLoading(true);
     
-    const payload = {
-      nama: formData.nama,
-      sku: formData.sku,
-      deskripsi: formData.deskripsi,
-      jumlah: Number(formData.jumlah),
-      kategoriId: Number(formData.kategoriId), 
-      ...(formData.lokasiGudangId && { lokasiGudangId: Number(formData.lokasiGudangId) })
-    };
+    try {
+      let urlGambar = null;
 
-    axios.post('http://localhost:3000/barang', payload)
-      .then(() => {
-        setLoading(false);
-        navigate('/inventory');
-      })
-      .catch(() => {
-        setLoading(false);
-        alert('Gagal menyimpan item. Pastikan SKU unik.');
-      });
+      if (foto) {
+        const formDataFoto = new FormData();
+        formDataFoto.append('foto', foto);
+        const uploadRes = await axios.post('http://localhost:3000/barang/upload', formDataFoto, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        urlGambar = uploadRes.data.url;
+      }
+
+      const payload = {
+        nama: formData.nama,
+        sku: formData.sku,
+        deskripsi: formData.deskripsi,
+        jumlah: Number(formData.jumlah),
+        kategoriId: Number(formData.kategoriId), 
+        ...(formData.lokasiGudangId && { lokasiGudangId: Number(formData.lokasiGudangId) }),
+        ...(urlGambar && { urlGambar })
+      };
+
+      await axios.post('http://localhost:3000/barang', payload);
+      setLoading(false);
+      navigate('/inventory');
+    } catch (error) {
+      setLoading(false);
+      alert('Gagal menyimpan item. Pastikan SKU unik atau periksa koneksi server.');
+    }
   };
 
   return (
@@ -146,6 +167,34 @@ export default function AddItem() {
                 onChange={(e) => setFormData({...formData, stokMinimum: parseInt(e.target.value) || 0})}
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Foto Barang (Opsional)</label>
+            <div className="mt-1 flex items-center gap-4">
+              {fotoPreview ? (
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-slate-200">
+                  <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <button 
+                    type="button"
+                    onClick={() => { setFoto(null); setFotoPreview(null); }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                  <span className="text-xl text-slate-400">+</span>
+                  <span className="text-[10px] text-slate-500 mt-1">Upload</span>
+                  <input type="file" accept="image/*" onChange={handleFotoChange} className="hidden" />
+                </label>
+              )}
+              <div className="text-xs text-slate-500">
+                Format: JPG, PNG, WEBP.<br/>
+                Maksimal ukuran: 2MB.
+              </div>
             </div>
           </div>
 
