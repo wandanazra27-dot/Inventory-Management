@@ -48,15 +48,18 @@ export default function WarehouseMap({ highlightedLocation }: WarehouseMapProps)
 
   // Sort locations inside each zone logically by baris (ascending) and keranjang (ascending)
   Object.keys(groupedLocations).forEach(zone => {
-    groupedLocations[zone].sort((a, b) => {
+    groupedLocations[zone].sort((a: any, b: any) => {
       const barisA = a.baris || 1;
       const barisB = b.baris || 1;
       if (barisA !== barisB) {
         return barisA - barisB; // Ascending: baris 1 (top left)
       }
-      const numA = parseInt(a.keranjang || a.nama.replace(/[^0-9]/g, '')) || 0;
-      const numB = parseInt(b.keranjang || b.nama.replace(/[^0-9]/g, '')) || 0;
-      return numA - numB; // Ascending: left to right (1, 2, 3...)
+      const numA = parseInt(a.keranjang) || 0;
+      const numB = parseInt(b.keranjang) || 0;
+      if (numA !== numB) {
+        return numA - numB; // Ascending: left to right (1, 2, 3...)
+      }
+      return a.nama.localeCompare(b.nama, undefined, { numeric: true });
     });
   });
 
@@ -83,7 +86,7 @@ export default function WarehouseMap({ highlightedLocation }: WarehouseMapProps)
               const color = ZONE_COLORS[zone] || DEFAULT_COLOR;
               
               return (
-                <div key={zone} className={`${color.bg} rounded-xl p-4 border-2 ${color.border} flex flex-col transition-colors h-fit`}>
+                <div key={zone} className={`${color.bg} rounded-xl p-4 border-2 ${color.border} flex flex-col transition-colors h-full`}>
                   <h4 className={`text-center font-semibold ${color.text} mb-3 flex items-center justify-center gap-2`}>
                     {zone}
                     <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border opacity-70">

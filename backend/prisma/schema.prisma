@@ -19,6 +19,7 @@ model barang {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   urlGambar      String?
+  harga          Int?
   kategori       kategori      @relation(fields: [kategoriId], references: [id])
   lokasigudang   lokasigudang? @relation(fields: [lokasiGudangId], references: [id])
   riwayatscan    riwayatscan[]

@@ -4,6 +4,11 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   async onModuleInit() {
-    await this.$connect();
+    try {
+      await this.$connect();
+      console.log('Database connected successfully');
+    } catch (error: any) {
+      console.error('⚠️ Database connection error (Supabase project may be paused):', error.message);
+    }
   }
 }

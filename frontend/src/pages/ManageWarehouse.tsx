@@ -97,9 +97,23 @@ export default function ManageWarehouse() {
   const zones = Array.from(new Set(locations.map(loc => loc.zona).filter(Boolean)));
   
   // Filter the table based on selected zone
-  const filteredLocations = selectedZone 
+  const filteredLocations = (selectedZone 
     ? locations.filter(loc => loc.zona === selectedZone)
-    : locations;
+    : [...locations]).sort((a, b) => {
+      // 1. Sort by zone
+      const zoneCmp = (a.zona || '').localeCompare(b.zona || '');
+      if (zoneCmp !== 0) return zoneCmp;
+      // 2. Sort by baris
+      const barisA = a.baris || 1;
+      const barisB = b.baris || 1;
+      if (barisA !== barisB) return barisA - barisB;
+      // 3. Sort by keranjang (if explicitly set)
+      const numA = parseInt(a.keranjang) || 0;
+      const numB = parseInt(b.keranjang) || 0;
+      if (numA !== numB) return numA - numB;
+      // 4. Sort by name naturally
+      return a.nama.localeCompare(b.nama, undefined, { numeric: true });
+    });
 
   return (
     <div className="space-y-6 p-2">
@@ -124,16 +138,16 @@ export default function ManageWarehouse() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-5 flex flex-col h-full">
-          <div className="h-full min-h-125">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-162.5 mb-6">
+        <div className="lg:col-span-5 flex flex-col h-full min-h-0">
+          <div className="h-full min-h-0">
              <WarehouseMap highlightedLocation={hoveredLocation} />
           </div>
         </div>
 
         {/* Right Column - Table */}
-        <div className="lg:col-span-7 flex flex-col">
-          <div className="bg-white rounded-xl border border-slate-900 shadow-sm overflow-hidden flex flex-col">
+        <div className="lg:col-span-7 flex flex-col h-full min-h-0">
+          <div className="bg-white rounded-xl border border-slate-900 shadow-sm overflow-hidden flex flex-col h-full min-h-0">
             {/* Filter Section */}
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -159,24 +173,24 @@ export default function ManageWarehouse() {
               <span className="text-xs text-slate-500 font-medium">{filteredLocations.length} lokasi</span>
             </div>
 
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-white text-slate-800 font-semibold border-b border-slate-900">
+            <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
+              <table className="w-full text-sm text-left relative">
+                <thead className="bg-white text-slate-800 font-semibold border-b border-slate-900 sticky top-0 z-10 shadow-sm">
                   <tr>
-                    <th className="px-6 py-4 w-32">Label</th>
-                    <th className="px-6 py-4 text-center w-32">Rak</th>
-                    <th className="px-6 py-4">Barang Tersimpan</th>
-                    <th className="px-6 py-4 w-24"></th>
+                    <th className="px-4 py-2.5 w-32">Label</th>
+                    <th className="px-4 py-2.5 text-center w-32">Rak</th>
+                    <th className="px-4 py-2.5">Barang Tersimpan</th>
+                    <th className="px-4 py-2.5 w-24"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-8 text-slate-500">Memuat data...</td>
+                      <td colSpan={4} className="text-center py-6 text-slate-500">Memuat data...</td>
                     </tr>
                   ) : filteredLocations.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-12 text-slate-500">
+                      <td colSpan={4} className="text-center py-8 text-slate-500">
                         Belum ada lokasi penyimpanan yang didaftarkan.
                       </td>
                     </tr>
@@ -188,18 +202,18 @@ export default function ManageWarehouse() {
                         onMouseEnter={() => setHoveredLocation(loc.nama)}
                         onMouseLeave={() => setHoveredLocation(null)}
                       >
-                        <td className="px-6 py-2">
-                          <div className="font-mono text-xs font-semibold text-slate-700 flex items-center gap-2">
+                        <td className="px-4 py-1.5">
+                          <div className="font-mono text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
                             <MapPin className="w-3 h-3 text-slate-400" />
                             <span>{loc.nama}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-2 text-center">
-                          <span className="text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">{loc.zona}</span>
+                        <td className="px-4 py-1.5 text-center">
+                          <span className="text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-semibold">{loc.zona}</span>
                         </td>
-                        <td className="px-6 py-2">
+                        <td className="px-4 py-1.5">
                           {loc.barang && loc.barang.length > 0 ? (
-                            <select className="w-full max-w-70 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 cursor-pointer focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-sm appearance-none hover:bg-slate-50 transition-colors">
+                            <select className="w-full max-w-70 px-2 py-1 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 cursor-pointer focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-sm appearance-none hover:bg-slate-50 transition-colors">
                               <option value="" disabled selected>📦 {loc.barang.length} Barang Tersimpan</option>
                               {loc.barang.map((b: any, index: number) => (
                                 <option key={index} value={b.id}>• {b.nama}</option>
@@ -209,21 +223,21 @@ export default function ManageWarehouse() {
                             <span className="text-slate-400 text-[11px] italic">Kosong</span>
                           )}
                         </td>
-                        <td className="px-6 py-2 text-right">
+                        <td className="px-4 py-1.5 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button 
-                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                              className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-all"
                               onClick={() => openEditModal(loc)}
                               title="Edit Lokasi"
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button 
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
                               onClick={() => handleDelete(loc.id)}
                               title="Hapus Lokasi"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>

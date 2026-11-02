@@ -56,7 +56,7 @@ export default function ItemDetail() {
       deskripsi: itemData?.deskripsi || ''
     });
     setFoto(null);
-    setFotoPreview(itemData?.urlGambar ? `http://localhost:3000${itemData.urlGambar}` : null);
+    setFotoPreview(itemData?.urlGambar ? (itemData.urlGambar.startsWith('http') ? itemData.urlGambar : `http://localhost:3000${itemData.urlGambar}`) : null);
     
     // Fetch options if not fetched yet
     if (locations.length === 0) {
@@ -184,7 +184,7 @@ export default function ItemDetail() {
           <div className="bg-white rounded-xl border p-6 shadow-sm flex flex-col items-center justify-center text-center">
             {itemData.urlGambar ? (
               <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-sm border border-slate-200 mb-4 bg-slate-50">
-                <img src={`http://localhost:3000${itemData.urlGambar}`} alt={nama} className="w-full h-full object-cover" />
+                <img src={itemData.urlGambar.startsWith('http') ? itemData.urlGambar : `http://localhost:3000${itemData.urlGambar}`} alt={nama} className="w-full h-full object-cover" />
               </div>
             ) : (
               <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${jumlah > 10 ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>

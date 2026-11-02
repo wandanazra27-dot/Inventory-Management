@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+dist/
+
+# Large PDF documents and raw extraction dumps
+*.pdf
+List Product #*/
+
+# Uploads directory at root (if any)
+/uploads/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

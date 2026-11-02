@@ -30,7 +30,12 @@ export default function Inventory() {
     item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.deskripsi && item.deskripsi.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (item.kategori?.nama && item.kategori.nama.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  ).sort((a, b) => {
+    const hasImgA = !!a.urlGambar;
+    const hasImgB = !!b.urlGambar;
+    if (hasImgA === hasImgB) return a.nama.localeCompare(b.nama);
+    return hasImgA ? -1 : 1;
+  });
 
   return (
     <div className="space-y-6 p-2">
@@ -95,8 +100,16 @@ export default function Inventory() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         {item.urlGambar ? (
-                          <div className="w-10 h-10 rounded-md overflow-hidden shrink-0 border border-slate-200">
-                            <img src={`http://localhost:3000${item.urlGambar}`} alt={item.nama} className="w-full h-full object-cover" />
+                          <div className="w-10 h-10 rounded-md overflow-hidden shrink-0 border border-slate-200 relative bg-emerald-50 flex items-center justify-center">
+                            <span className="text-emerald-500 text-lg absolute z-0">📦</span>
+                            <img 
+                              src={item.urlGambar.startsWith('http') ? item.urlGambar : `http://localhost:3000${item.urlGambar}`} 
+                              alt={item.nama} 
+                              className="w-full h-full object-cover relative z-10" 
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
                           </div>
                         ) : (
                           <div className="w-10 h-10 rounded-md bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
