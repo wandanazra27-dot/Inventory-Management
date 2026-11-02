@@ -1,15 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Package, Search, Hexagon, BarChart2, Map } from 'lucide-react';
+import { Search, Hexagon, History } from 'lucide-react';
 
 export default function Sidebar() {
   const location = useLocation();
 
   const menuItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <BarChart2 className="w-4.5 h-4.5" /> },
-    { name: 'Search & Locate', path: '/search-locate', icon: <Search className="w-4.5 h-4.5" /> },
-    { name: 'Inventory', path: '/inventory', icon: <Package className="w-4.5 h-4.5" /> },
-    { name: 'Manage Warehouse', path: '/manage-warehouse', icon: <Map className="w-4.5 h-4.5" /> },
-    { name: 'Reports & Logs', path: '/reports', icon: <BarChart2 className="w-4.5 h-4.5" /> },
+    { name: 'Pencarian & Lokasi', path: '/search-locate', icon: <Search className="w-4.5 h-4.5" /> },
+    { name: 'Riwayat Pencarian', path: '/reports', icon: <History className="w-4.5 h-4.5" /> },
   ];
 
   return (
@@ -22,22 +19,22 @@ export default function Sidebar() {
           <Hexagon className="w-6 h-6 text-white fill-white/20" />
         </div>
         <div className="relative z-10">
-          <h2 className="text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-white to-slate-300 tracking-tight leading-none mb-1">
-            MIS
+          <h2 className="text-xl font-black text-transparent bg-clip-text bg-linear-to-r from-white to-slate-300 tracking-tight leading-none mb-1">
+            Pencarian
           </h2>
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-            Management Inventory System
+          <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-[0.2em]">
+            Smart Item Locator
           </p>
         </div>
       </div>
 
       <nav className="px-4 py-2 flex-1 flex flex-col gap-1.5 overflow-y-auto custom-scrollbar">
         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-2 mt-2">
-          Menu Utama
+          Menu Pencarian
         </div>
         
         {menuItems.map((item) => {
-          const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.includes(item.path);
+          const isActive = location.pathname.includes(item.path);
           return (
             <Link
               key={item.name}
@@ -63,7 +60,6 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      
     </aside>
   );
 }
